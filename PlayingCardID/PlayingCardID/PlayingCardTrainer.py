@@ -18,7 +18,7 @@ SAMPLES_PER_EPOCH=3000
 NUMBER_OF_EPOCHS=20
 BATCH_SIZE=64
 SAVE_BEST_ONLY='true'
-KEEP_PROBABILITY=0.6
+KEEP_PROBABILITY=0.65
 
 #Playing Card Images
 IMAGE_HEIGHT = 128
@@ -35,10 +35,14 @@ NUMBER_OF_CLASSES=52
 def build_model():
     model = Sequential()
 
-    model.add(Conv2D(32, 3,3, activation='relu', input_shape=(IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS)))
+    model.add(Conv2D(32, 5,5, activation='relu', input_shape=(IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS)))
     model.add(BatchNormalization())
 
     model.add(Conv2D(32, 3,3, activation='relu'))
+    model.add(BatchNormalization())
+    model.add(Dropout(KEEP_PROBABILITY))
+
+    model.add(Conv2D(16, 3,3, activation='relu'))
     model.add(BatchNormalization())
     model.add(Dropout(KEEP_PROBABILITY))
 
@@ -80,6 +84,8 @@ def train_model(model, X_train, X_valid, Y_train, Y_valid):
 
 BASE = np.float32([[0,0],[0,IMAGE_HEIGHT-1],[IMAGE_WIDTH-1,IMAGE_HEIGHT-1],[IMAGE_WIDTH-1,0]])
 SIZE = np.float32([[10,10],[10,IMAGE_HEIGHT-11],[IMAGE_WIDTH-11,IMAGE_HEIGHT-11],[IMAGE_WIDTH-11,10]])
+SIZE2 = np.float32([[15,15],[15,IMAGE_HEIGHT-16],[IMAGE_WIDTH-16,IMAGE_HEIGHT-16],[IMAGE_WIDTH-16,15]])
+SIZE3 = np.float32([[20,20],[20,IMAGE_HEIGHT-21],[IMAGE_WIDTH-21,IMAGE_HEIGHT-21],[IMAGE_WIDTH-21,20]])
 
 LEFT_SQUISH = np.float32([[0,10],[0,IMAGE_HEIGHT-1],[IMAGE_WIDTH-1,IMAGE_HEIGHT-1],[IMAGE_WIDTH-1,0]])
 RIGHT_SQUISH = np.float32([[0,0],[0,IMAGE_HEIGHT-1],[IMAGE_WIDTH-1,IMAGE_HEIGHT-11],[IMAGE_WIDTH-1,10]])
@@ -93,10 +99,16 @@ TOP_SQUISH_TRANS = cv2.getPerspectiveTransform(BASE,TOP_SQUISH)
 BOTTOM_SQUISH_TRANS = cv2.getPerspectiveTransform(BASE,BOTTOM_SQUISH)
 
 ZOOM_IN = cv2.getPerspectiveTransform(SIZE,BASE)
+ZOOM_IN2 = cv2.getPerspectiveTransform(SIZE2,BASE)
+ZOOM_IN3 = cv2.getPerspectiveTransform(SIZE3,BASE)
 ZOOM_OUT  = cv2.getPerspectiveTransform(BASE,SIZE)
 
 def augment(img):
     nimg = img
+
+    #30% of the time, no augmentation
+    if np.random.rand() >= 0.7:
+        return nimg
 
     #ROTATE 180
     if np.random.rand() < 0.5:
@@ -117,6 +129,9 @@ def augment(img):
         nimg = cv2.subtract(nimg,np.array([np.random.rand()*90.0]))
     elif(dob > 0.66):
         nimg = cv2.add(nimg,np.array([np.random.rand()*90.0]))
+    elif(dob > 0.4):
+        _, nimg = cv2.threshold(nimg,128,255,cv2.THRESH_BINARY)
+    
 
     #PERSPECTIVE
     persp = np.random.rand()
@@ -131,9 +146,13 @@ def augment(img):
 
     #SCALE
     scaler = np.random.rand()
-    if(scaler>0.6):
+    if(scaler>0.9):
+        nimg = cv2.warpPerspective(nimg,ZOOM_IN3,(IMAGE_WIDTH,IMAGE_HEIGHT))
+    elif(scaler>0.8):
+        nimg = cv2.warpPerspective(nimg,ZOOM_IN2,(IMAGE_WIDTH,IMAGE_HEIGHT))
+    elif(scaler>0.6):
         nimg = cv2.warpPerspective(nimg,ZOOM_IN,(IMAGE_WIDTH,IMAGE_HEIGHT))
-    elif(scaler>0.3): 
+    elif(scaler<0.2): 
         nimg = cv2.warpPerspective(nimg,ZOOM_OUT,(IMAGE_WIDTH,IMAGE_HEIGHT))
 
 
@@ -151,8 +170,10 @@ def augment(img):
 
     #BLUR
     blurry = np.random.rand()
-    if(blurry > 0.6):
+    if(blurry > 0.9):
         nimg = cv2.GaussianBlur(nimg,(5,5),blurry)
+    elif(blurry > 0.7):
+        nimg = cv2.GaussianBlur(nimg,(3,3),blurry)
 
 
     #cv2.imshow('card2',np.array(nimg,dtype='uint8'))
@@ -172,8 +193,8 @@ def Yielder(x,y,aug):
                 xBatch[i] = np.reshape(x[index],(IMAGE_HEIGHT,IMAGE_WIDTH,IMAGE_CHANNELS))
 
             yBatch[i] = y[index]
-            cv2.imshow('card2',np.array(xBatch[i],dtype='uint8'))
-            cv2.waitKey(200)
+            #cv2.imshow('card2',np.array(xBatch[i],dtype='uint8'))
+            #cv2.waitKey(200)
             i+=1
             if i == BATCH_SIZE:
                 break
@@ -184,19 +205,24 @@ def Yielder(x,y,aug):
 #(X_train, Y_train), (X_valid, Y_valid) = mnist.load_data()
 
 cardPaths = []
-cardPaths.append("D:\\Documents\\CodeProjects\\PlayingCardID\\cards1")
-cardPaths.append("D:\\Documents\\CodeProjects\\PlayingCardID\\cards2")
-cardPaths.append("D:\\Documents\\CodeProjects\\PlayingCardID\\cards3")
-cardPaths.append("D:\\Documents\\CodeProjects\\PlayingCardID\\cards4")
-cardPaths.append("D:\\Documents\\CodeProjects\\PlayingCardID\\cards5")
-cardPaths.append("D:\\Documents\\CodeProjects\\PlayingCardID\\cards6")
-cardPaths.append("D:\\Documents\\CodeProjects\\PlayingCardID\\cards7")
-cardPaths.append("D:\\Documents\\CodeProjects\\PlayingCardID\\cards8")
+cardPaths.append("D:\\Documents\\CodeProjects\\PlayingCardsNeuralNet\\cards1")
+cardPaths.append("D:\\Documents\\CodeProjects\\PlayingCardsNeuralNet\\cards2")
+cardPaths.append("D:\\Documents\\CodeProjects\\PlayingCardsNeuralNet\\cards3")
+cardPaths.append("D:\\Documents\\CodeProjects\\PlayingCardsNeuralNet\\cards4")
+cardPaths.append("D:\\Documents\\CodeProjects\\PlayingCardsNeuralNet\\cards5")
+cardPaths.append("D:\\Documents\\CodeProjects\\PlayingCardsNeuralNet\\cards6")
+cardPaths.append("D:\\Documents\\CodeProjects\\PlayingCardsNeuralNet\\cards7")
+cardPaths.append("D:\\Documents\\CodeProjects\\PlayingCardsNeuralNet\\cards8")
+cardPaths.append("D:\\Documents\\CodeProjects\\PlayingCardsNeuralNet\\cards9")
+cardPaths.append("D:\\Documents\\CodeProjects\\PlayingCardsNeuralNet\\cards10")
+cardPaths.append("D:\\Documents\\CodeProjects\\PlayingCardsNeuralNet\\cards11")
+cardPaths.append("D:\\Documents\\CodeProjects\\PlayingCardsNeuralNet\\cards12")
+cardPaths.append("D:\\Documents\\CodeProjects\\PlayingCardsNeuralNet\\cards13")
 CardImages = []
 CardIDs = []
 
 
-trainraw = pd.read_csv('D:\\Documents\\CodeProjects\\PlayingCardID\\Cards.txt')
+trainraw = pd.read_csv('D:\\Documents\\CodeProjects\\PlayingCardsNeuralNet\\Cards.txt')
 
 filenames = trainraw['FILENAME'].values
 ids = trainraw['ID'].values

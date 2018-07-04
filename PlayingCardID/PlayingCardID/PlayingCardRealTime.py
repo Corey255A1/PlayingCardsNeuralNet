@@ -2,8 +2,6 @@ import pandas as pd
 import numpy as np
 #load our saved model
 from keras.models import load_model
-#from keras.datasets import cifar100
-#from keras.datasets import cifar10
 from keras.datasets import mnist
 import os
 import cv2
@@ -48,8 +46,8 @@ NUMBER_OF_CLASSES=52
 
 
 #Load the Model
-model = load_model('D:\\Documents\\CodeProjects\\PlayingCardID\\PlayingCardID\\PlayingCardID\\model-018.h5')
-trainraw = pd.read_csv('D:\\Documents\\CodeProjects\\PlayingCardID\\Cards.txt')
+model = load_model('D:\\Documents\\CodeProjects\\PlayingCardsNeuralNet\\PlayingCardID\\PlayingCardID\\model-018.h5')
+trainraw = pd.read_csv('D:\\Documents\\CodeProjects\\PlayingCardsNeuralNet\\Cards.txt')
 
 filenames = trainraw['FILENAME'].values
 ids = trainraw['ID'].values

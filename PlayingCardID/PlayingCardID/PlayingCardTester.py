@@ -39,7 +39,7 @@ IMAGE_CHANNELS = 1
 NUMBER_OF_CLASSES=2
 
 #GET Canned IMAGE
-img = cv2.imread('D:\\Documents\\CodeProjects\\PlayingCardID\\cards7\\S (8).jpg',cv2.IMREAD_GRAYSCALE)
+img = cv2.imread('D:\\Documents\\ImageProjects\\Queen.jpg',cv2.IMREAD_GRAYSCALE)
 img = cv2.resize(img,(IMAGE_WIDTH,IMAGE_HEIGHT))
 
 
@@ -47,7 +47,7 @@ cv2.imshow("Image to Predict",img)
 cv2.waitKey()
 
 #Load the Model
-model = load_model('D:\\Documents\\CodeProjects\\PlayingCardID\\PlayingCardID\\PlayingCardID\\model-023.h5')
+model = load_model('D:\\Documents\\CodeProjects\\PlayingCardsNeuralNet\\PlayingCardID\\PlayingCardID\\EvenBetterModel.h5')
 
 # Get Weights of Classes
 lbl = model.predict(np.reshape(img,(1,IMAGE_WIDTH,IMAGE_HEIGHT,IMAGE_CHANNELS)),batch_size=1)
@@ -58,7 +58,7 @@ Percentages = []
 for l in lbl[0]:
     print(l)
 
-trainraw = pd.read_csv('D:\\Documents\\CodeProjects\\PlayingCardID\\Cards.txt')
+trainraw = pd.read_csv('D:\\Documents\\CodeProjects\\PlayingCardsNeuralNet\\Cards.txt')
 
 filenames = trainraw['FILENAME'].values
 ids = trainraw['ID'].values

@@ -17,7 +17,7 @@ class Basket:
 
 
 cardName = "cards8"
-img = cv2.imread("D:\\Documents\\CodeProjects\\PlayingCardID\\"+cardName+".jpg")
+img = cv2.imread("D:\\Documents\\CodeProjects\\PlayingCardsNeuralNet\\"+cardName+".jpg")
 gimg = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
 gimg = cv2.GaussianBlur(gimg,(3,3),0)
 ret, thresh = cv2.threshold(gimg, 160, 255, cv2.THRESH_BINARY_INV)
@@ -70,7 +70,7 @@ XBasket.sort(key=lambda x: x.GetAverage())
 slice = 0
 #for y in range(0,len(YBasket)-1):
 #    for x in range(0,len(XBasket)-1):
-#        cv2.imwrite("D:\\Documents\\CodeProjects\\PlayingCardID\\"+cardName+"\\"+str(slice)+".jpg",img[YBasket[y].GetAverage():YBasket[y+1].GetAverage(),XBasket[x].GetAverage():XBasket[x+1].GetAverage()])
+#        cv2.imwrite("D:\\Documents\\CodeProjects\\PlayingCardsNeuralNet\\"+cardName+"\\"+str(slice)+".jpg",img[YBasket[y].GetAverage():YBasket[y+1].GetAverage(),XBasket[x].GetAverage():XBasket[x+1].GetAverage()])
 #        slice = slice + 1
 
 cv2.imshow("cards",img)
