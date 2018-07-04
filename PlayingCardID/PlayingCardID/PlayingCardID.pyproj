@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>d8608305-fd03-441f-b49d-3e5a08bc9a62</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>SolitairePlayer.py</StartupFile>
+    <StartupFile>SolitaireSimulator.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -41,7 +41,11 @@
     <Compile Include="PlayingCardTrainer.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Solitaire.py" />
     <Compile Include="SolitairePlayer.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SolitaireSimulator.py">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
