@@ -38,6 +38,6 @@ while True:
     cv2.imshow("Labeled",playingfield)
     #cv2.imshow("card",cards[SolitaireCardExtractor.DRAWPILE][0])
     # Adjust WaitKey Time if Frames are Freezing
-    if cv2.waitKey(50) & 0xFF == ord('q'):
+    if cv2.waitKey() & 0xFF == ord('q'):
         break
 

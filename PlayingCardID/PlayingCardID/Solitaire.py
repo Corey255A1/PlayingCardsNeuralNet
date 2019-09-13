@@ -12,6 +12,17 @@ class Card:
         self.Suit = suit
         self.Rank = rank
         self.FaceDown = facingdown
+    @staticmethod
+    def indexToSuit(index):
+        return int(index/Card.CARDS_PER_SUIT)
+    @staticmethod
+    def indexToRank(index):
+        return int(index%Card.CARDS_PER_SUIT)
+    @staticmethod
+    def indexToCard(index):
+        return Card(Card.indexToSuit(index),Card.indexToRank(index),False)
+    def index(self):
+        return Card.CARDS_PER_SUIT*self.Suit + self.Rank
     def isSameSuit(self, card):
         return self.Suit == card.Suit
     def isSameColor(self, card):
@@ -28,7 +39,6 @@ class Card:
     def __repr__(self):
         return str(self.Suit) + " " + str(self.Rank) + " " + str("FaceDown" if self.FaceDown else "FaceUp")
 
-  
 #Solitaire Klondike
 class MoveDescriptor:
     DISCARD_PILE = 0
@@ -42,9 +52,27 @@ class MoveDescriptor:
         self.ToPileType = to_piletype
         self.ToPileIndex = to_pileidx
 
+
 class Klondike:
     NUM_OF_COLUMNS = 7
     NUM_OF_HOMES = 4
+    CARD_ACTIONS = {
+        0:"To Opposite 1",
+        1:"To Opposite 2",
+        2:"To Home"
+       }
+    POSITIONS = {
+    "UNKNOWN":0,
+    "DISCARD":1,
+    "COL1":2,
+    "COL2":3,
+    "COL3":4,
+    "COL4":5,
+    "COL5":6,
+    "COL6":7,
+    "COL7":8,
+    "HOME":8
+    }
 
     def __init__(self):
         #-------- SETUP UP THE PLAYING AREA --------
@@ -52,6 +80,11 @@ class Klondike:
         self.DiscardPile = []
         self.DrawPile = []
         self.Homes = []
+        #Keep track of the loops through the draw pile
+        #To prevent endlessly cycling through the draw pile
+        #without making other moves
+        self.Draw_Loop_Tracker = 0
+        self.Tried_To_Draw_But_No_Cards = False
         initdeck = []
         for s in range(0, Card.NUM_OF_SUITS):
             for r in range(0, Card.CARDS_PER_SUIT):
@@ -93,19 +126,75 @@ class Klondike:
 
 
     def Draw(self):
-        if not len(self.DrawPile) >0:
+        print("---------DRAWING")
+        if not len(self.DrawPile) > 0:
+            self.Draw_Loop_Tracker = self.Draw_Loop_Tracker + 1
             for dis in range(0, len(self.DiscardPile)):
                 discard = self.DiscardPile.pop()
                 discard.flip()
                 self.DrawPile.append(discard)
-        d = self.DrawPile.pop()
-        d.flip()
-        self.DiscardPile.append(d)
-        return d
+        if len(self.DrawPile) > 0:
+            d = self.DrawPile.pop()
+            d.flip()
+            self.DiscardPile.append(d)
+            return d
+        self.Tried_To_Draw_But_No_Cards = True
+        return None
+
+    def GetAllVisibleCards(self):
+        cindex = Klondike.POSITIONS["COL1"]
+        for col in self.Columns:
+            for card in col:
+                if not card.FaceDown:
+                    if card.Rank != Card.PLACE_HOLDER_CARD:
+                        yield (card,cindex)
+            cindex = cindex + 1
+        for card in self.DiscardPile:
+            yield (card,Klondike.POSITIONS["DISCARD"])
+        for home in self.Homes:
+            for card in home:
+                if card.Rank != Card.PLACE_HOLDER_CARD:
+                    yield (card,Klondike.POSITIONS["HOME"])
+
+    def GetColumnDownCounts(self):        
+        colcounts = []
+        for col in self.Columns:
+            count = 0
+            for card in col:
+                if card.FaceDown:
+                    count = count + 1
+            colcounts.append(count)
+        return colcounts
+
+    def GetCardsFromMove(self,movedesc):
+        fromCard = None
+        if movedesc.FromPileType == MoveDescriptor.DISCARD_PILE:
+            fromCard = self.DiscardPile[-1]
+        elif movedesc.FromPileType == MoveDescriptor.COLUMN_PILE:
+            fromCard = self.Columns[movedesc.FromPileIndex][-1]
+        elif movedesc.FromPileType == MoveDescriptor.HOME_PILE:
+            fromCard = self.Homes[movedesc.FromPileIndex][-1]
+
+        toCard = None
+        if movedesc.ToPileType == MoveDescriptor.DISCARD_PILE:
+            print("NotValid") 
+        elif movedesc.ToPileType == MoveDescriptor.COLUMN_PILE:
+            toCard = self.Columns[movedesc.ToPileIndex][-1]
+        elif movedesc.ToPileType == MoveDescriptor.HOME_PILE:
+            toCard = self.Homes[movedesc.ToPileIndex][-1]
+
+        return (fromCard,toCard)
+
+    def ActionToCard(self, action):
+        card_act = action % 3
+        card = int(action / 3)        
+        return (card, card_act)
 
     def PerformMove(self,movedesc):
         #Get Card/Cards to move
+        print("---------MOVING")
         mCard = []
+        self.Draw_Loop_Tracker = 0 #A Move happen so reset the loop
         if movedesc.FromPileType == MoveDescriptor.DISCARD_PILE:
             mCard.append(self.DiscardPile.pop())
         elif movedesc.FromPileType == MoveDescriptor.COLUMN_PILE:
@@ -190,6 +279,7 @@ class Klondike:
             #print("COLUMN " + str(idx))
             if len(col)>1:
                 #Using List like Stack going down in reverse
+                #don't go down to dummy card
                 for cidx in range(-1, -(len(col)), -1):
                     ccard = col[cidx]
                     if not ccard.FaceDown:
@@ -233,6 +323,17 @@ class Klondike:
                     c2idx = c2idx + 1
             idx = idx + 1
         return ValidMoves
+
+    def IsGameOver(self):
+        gameover = True
+        for home in self.Homes:
+            if len(home) <= Card.CARDS_PER_SUIT: #account for placeholder
+                return False #If the home doesn't have all of the cards, game isn't over yet
+
+        return True
+
+    def IsGameStuck(self):
+        return self.Draw_Loop_Tracker > 2 or self.Tried_To_Draw_But_No_Cards
 
     def PrettyPrintMoveDescriptor(self,move):
         fcard = ''
